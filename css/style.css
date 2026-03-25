@@ -402,6 +402,8 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     .stats-bar .stat-card{flex:1;min-width:calc(50% - 6px);}
     .filter-tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;}
     .filter-tab{white-space:nowrap;flex-shrink:0;}
-    .task-card{flex-wrap:wrap;}
-    .task-card-right{width:100%;justify-content:flex-end;margin-top:8px;}
+    .task-card{padding:12px;}
+    .task-card-right{gap:4px;}
+    .task-card-right .priority-pill{display:none;}
+    .btn-sm{padding:5px 8px;font-size:11px;}
 }
