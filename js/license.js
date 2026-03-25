@@ -49,10 +49,8 @@ const License = (() => {
             const record = existing[0];
 
             if (record.hwid && record.hwid !== hwid) {
-                // Different HWID found. Check if it's the same email owner (iOS storage wipe scenario)
-                const sameEmail = record.email && record.email.toLowerCase() === email.toLowerCase();
-                if (sameEmail) {
-                    // Re-activation allowed — same owner, storage was likely cleared
+                // Different HWID — only allow if reset was approved
+                if (record.reset_requested === true) {
                     await supabaseFetch('PATCH', `licenses?license_key=eq.${licenseKey}`, {
                         hwid, email,
                         activated_at: new Date().toISOString(),
