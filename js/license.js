@@ -135,7 +135,7 @@ const License = (() => {
     async function verifyGumroad(licenseKey) {
         if (!CONFIG.GUMROAD_PRODUCT_ID) return { success: true }; // dev mode skip
         try {
-            const res = await fetch('https://api.gumroad.com/v2/licenses/verify', {
+            const res = await fetch('https://tiny-darkness-3932.averageviewer711.workers.dev/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `product_id=${CONFIG.GUMROAD_PRODUCT_ID}&license_key=${encodeURIComponent(licenseKey)}`,
