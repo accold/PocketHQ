@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>PocketHQ</title>
+    <meta name="theme-color" content="#080808" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="PocketHQ" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ── Install Banner ── -->
+<div id="install-banner" class="install-banner hidden">
+    <div class="install-banner-text">
+        <strong>Add PocketHQ to your home screen</strong>
+        <span>for notifications and offline access</span>
+    </div>
+    <div class="install-banner-actions">
+        <button class="btn btn-primary btn-sm" onclick="installApp()">Install</button>
+        <button class="btn btn-secondary btn-sm" onclick="dismissInstall()">Not now</button>
+    </div>
+</div>
+
+<!-- ── Activation ── -->
+<div id="activation-screen" class="hidden">
+    <div class="activation-card">
+        <div class="logo">PocketHQ</div>
+        <div class="tagline">Your business. Your rules.</div>
+        <div id="activation-error" class="alert alert-error hidden"></div>
+        <div id="ios-install-hint" class="alert hidden" style="background:rgba(255,209,102,0.06);border:1px solid rgba(255,209,102,0.2);color:var(--warning);font-size:12px;line-height:1.6;">
+            <strong>iPhone/iPad:</strong> For your license to stay active, add PocketHQ to your Home Screen first. Tap the Share button → "Add to Home Screen", then open from there.
+        </div>
+        <div class="form-group">
+            <label>License Key</label>
+            <input id="license-key" placeholder="XXXX-XXXX-XXXX-XXXX" autocomplete="off" />
+        </div>
+        <div class="form-group">
+            <label>Email used at purchase</label>
+            <input id="license-email" type="email" placeholder="you@example.com" />
+        </div>
+        <button id="activate-btn" class="btn btn-primary" onclick="submitActivation()">Activate PocketHQ</button>
+        <div style="text-align:center;margin-top:16px;">
+            <a href="#" onclick="showResetRequest()" style="font-size:13px;color:var(--text-2);text-decoration:none;">Need a device reset?</a>
+        </div>
+    </div>
+</div>
+
+<!-- ── Wizard ── -->
+<div id="wizard-screen" class="hidden">
+    <div class="wizard-card">
+        <div class="wizard-logo">PocketHQ</div>
+        <div class="step-indicator">
+            <div class="step-dot active"></div>
+            <div class="step-dot"></div>
+        </div>
+        <div class="wizard-step active" id="wizard-step-0">
+            <h2>Welcome. Let's set up your workspace.</h2>
+            <p class="step-desc">PocketHQ adapts to any type of business. You build the tools you need — nothing more.</p>
+            <div class="form-group"><label>What's your business name?</label><input id="w-biz-name" placeholder="e.g. Mike's Roofing" /></div>
+            <div class="flex gap-2 mt-4" style="justify-content:flex-end;">
+                <button class="btn btn-primary" style="width:auto;padding:11px 24px;" onclick="wizardNext()">Continue →</button>
+            </div>
+        </div>
+        <div class="wizard-step" id="wizard-step-1">
+            <h2>What kind of business do you run?</h2>
+            <p class="step-desc">We'll set up a starter workspace for you. You can change everything later.</p>
+            <div class="template-grid" id="template-grid"></div>
+            <div class="flex gap-2 mt-4" style="justify-content:flex-end;">
+                <button class="btn btn-secondary" style="width:auto;" onclick="wizardBack()">← Back</button>
+                <button class="btn btn-primary" style="width:auto;padding:11px 24px;" onclick="wizardFinish()">Build My Workspace →</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── App ── -->
+<div id="app-screen" class="hidden">
+    <button class="hamburger" id="hamburger" onclick="toggleSidebar()">☰</button>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+    <nav class="sidebar" id="sidebar">
+        <div class="logo">PocketHQ</div>
+        <div class="biz-name" id="sidebar-biz"></div>
+        <div class="nav-section">Workspace</div>
+        <button class="nav-item" data-page="page-home" onclick="Nav.go('page-home')">
+            <span class="nav-icon">⌂</span><span class="nav-label">Home</span>
+        </button>
+        <div id="nav-blocks"></div>
+        <div class="nav-section">System</div>
+        <button class="nav-item" data-page="page-automations" onclick="Nav.go('page-automations')">
+            <span class="nav-icon">⚡</span><span class="nav-label">Automations</span>
+            <span class="nav-badge hidden" id="auto-badge"></span>
+        </button>
+        <button class="nav-item" data-page="page-help" onclick="Nav.go('page-help')">
+            <span class="nav-icon">?</span><span class="nav-label">Help</span>
+        </button>
+        <button class="nav-item" data-page="page-settings" onclick="Nav.go('page-settings')">
+            <span class="nav-icon">⚙</span><span class="nav-label">Settings</span>
+        </button>
+    </nav>
+
+    <div class="global-search-bar">
+        <input id="global-search" placeholder="Search everything..." oninput="GlobalSearch.run(this.value)" onfocus="GlobalSearch.show()" />
+        <div id="global-search-results" class="global-search-results hidden"></div>
+    </div>
+
+    <main class="main-content" id="main-content">
+
+        <!-- Home -->
+        <div class="page active" id="page-home">
+            <div class="page-header">
+                <div><h1 id="home-greeting">Dashboard</h1><p id="home-date"></p></div>
+                <button class="btn btn-primary" style="width:auto;" onclick="Blocks.openAddBlock()">+ Add Block</button>
+            </div>
+            <div id="home-notifications"></div>
+            <div id="blocks-grid" class="blocks-grid"></div>
+        </div>
+
+        <!-- Automations -->
+        <div class="page" id="page-automations">
+            <div class="page-header">
+                <div><h1>Automations</h1><p>Connect your blocks with if/then logic.</p></div>
+                <button class="btn btn-primary" style="width:auto;" onclick="AutoBuilder.open()">+ New Automation</button>
+            </div>
+            <div class="filter-tabs" style="margin-bottom:20px;">
+                <button class="filter-tab active" id="auto-tab-rules" onclick="switchAutoTab('rules')">Rules</button>
+                <button class="filter-tab" id="auto-tab-log" onclick="switchAutoTab('log')">Run Log</button>
+            </div>
+            <div id="automations-list"></div>
+            <div id="auto-log-container" class="hidden"></div>
+        </div>
+
+        <!-- Settings -->
+        <div class="page" id="page-settings">
+            <div class="page-header"><div><h1>Settings</h1><p>Manage your workspace and license.</p></div></div>
+            <div class="settings-card">
+                <div class="settings-card-title">Business Name</div>
+                <div class="settings-card-desc">Update your business name shown throughout the app.</div>
+                <div class="flex gap-2">
+                    <input id="settings-biz-name" style="max-width:300px;" />
+                    <button class="btn btn-secondary" style="width:auto;" onclick="saveBizName()">Save</button>
+                </div>
+            </div>
+            <div class="settings-card" style="margin-top:10px;">
+                <div class="settings-card-title">Notifications</div>
+                <div class="settings-card-desc">Allow PocketHQ to notify you about due tasks and follow-ups.</div>
+                <button class="btn btn-secondary" style="width:auto;" onclick="requestNotifPermission()">Enable Notifications</button>
+            </div>
+            <div class="settings-card" style="margin-top:10px;">
+                <div class="settings-card-title">Export Data</div>
+                <div class="settings-card-desc">Download all your data as a JSON backup file.</div>
+                <button class="btn btn-secondary" style="width:auto;" onclick="exportBackup()">Download Backup</button>
+            </div>
+            <div class="settings-card" style="margin-top:10px;">
+                <div class="settings-card-title">Import Backup</div>
+                <div class="settings-card-desc">Restore your workspace from a previously exported JSON backup. This will replace all current data.</div>
+                <input type="file" id="restore-file" accept=".json" style="display:none" onchange="importBackup(event)" />
+                <button class="btn btn-secondary" style="width:auto;" onclick="document.getElementById('restore-file').click()">Import Backup</button>
+            </div>
+            <div class="settings-card" style="margin-top:10px;">
+                <div class="settings-card-title">Device Reset</div>
+                <div class="settings-card-desc">Moving to a new device? Submit a reset request.</div>
+                <button class="btn btn-secondary" style="width:auto;" onclick="showResetRequest()">Request Device Reset</button>
+            </div>
+            <div class="settings-card" style="margin-top:10px;">
+                <div class="settings-card-title">Danger Zone</div>
+                <div class="settings-card-desc">Clear all data and restart setup.</div>
+                <button class="btn btn-danger" style="width:auto;" onclick="confirmReset()">Reset Everything</button>
+            </div>
+        </div>
+
+        <!-- Help -->
+        <div class="page" id="page-help">
+            <div class="page-header">
+                <div><h1>Help</h1><p>Everything you need to know about using PocketHQ.</p></div>
+            </div>
+
+            <div class="help-section">
+                <div class="help-section-title">🏠 What is PocketHQ?</div>
+                <div class="help-section-body">
+                    <p>PocketHQ is a workspace you build yourself. Instead of a one-size-fits-all app, you add the tools you actually need — called <strong>blocks</strong> — and connect them with <strong>automations</strong> that do things for you automatically.</p>
+                    <p style="margin-top:10px;">Think of it like building your own business dashboard, without needing to know how to code.</p>
+                </div>
+            </div>
+
+            <div class="help-section">
+                <div class="help-section-title">⬜ Blocks — Your Tools</div>
+                <div class="help-section-body">
+                    <p style="margin-bottom:16px;">Every block is a different type of tool. Click <strong>+ Add Block</strong> on the Home screen to add one.</p>
+                    <div class="help-block-grid">
+                        <div class="help-block-item">
+                            <div class="help-block-icon">🗃</div>
+                            <div>
+                                <div class="help-block-name">Database</div>
+                                <div class="help-block-desc">Like a spreadsheet — but smarter. You define the columns (Name, Phone, Status, Date, etc.) and add rows of data. Has a table view and a <strong>Kanban board</strong> view if you add a Status column. Use it for clients, jobs, orders, tenants, leads — anything you track in rows.</div>
+                            </div>
+                        </div>
+                        <div class="help-block-item">
+                            <div class="help-block-icon">✅</div>
+                            <div>
+                                <div class="help-block-name">Task List</div>
+                                <div class="help-block-desc">Your to-do list. Add tasks with due dates and priority levels. Overdue tasks show in red. Filter by Today, Overdue, or High Priority. You can get a notification reminder when tasks are due — enable this in Settings.</div>
+                            </div>
+                        </div>
+                        <div class="help-block-item">
+                            <div class="help-block-icon">📈</div>
+                            <div>
+                                <div class="help-block-name">Tracker</div>
+                                <div class="help-block-desc">Log numbers over time and see a running total. Good for revenue, units sold, hours worked, miles driven, or anything else you measure. Just hit <strong>+ Log Entry</strong>, enter the number, and it adds up.</div>
+                            </div>
+                        </div>
+                        <div class="help-block-item">
+                            <div class="help-block-icon">📝</div>
+                            <div>
+                                <div class="help-block-name">Notes</div>
+                                <div class="help-block-desc">A freeform text area for anything that doesn't fit elsewhere. SOPs, business info, scripts, checklists, reminders. Just type and hit Save.</div>
+                            </div>
+                        </div>
+                        <div class="help-block-item">
+                            <div class="help-block-icon">💰</div>
+                            <div>
+                                <div class="help-block-name">Budget</div>
+                                <div class="help-block-desc">Track money coming in (income) and going out (expenses). Every entry shows your net profit automatically. Use categories like "Materials", "Labor", "Sales" to stay organized. Filter to see only income or only expenses.</div>
+                            </div>
+                        </div>
+                        <div class="help-block-item">
+                            <div class="help-block-icon">📅</div>
+                            <div>
+                                <div class="help-block-name">Schedule</div>
+                                <div class="help-block-desc">Add appointments, meetings, deadlines, or any events with a date and optional time. Today's events are highlighted. Mark events done when they're over. Filter by Upcoming, Today, or Past.</div>
+                            </div>
+                        </div>
+                        <div class="help-block-item">
+                            <div class="help-block-icon">☑</div>
+                            <div>
+                                <div class="help-block-name">Checklist</div>
+                                <div class="help-block-desc">A repeatable step-by-step list. Great for end-of-day routines, job site safety checks, onboarding steps, or any process you repeat. Check off items as you go. Hit <strong>↺ Reset</strong> to start fresh for the next round.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="help-section">
+                <div class="help-section-title">🗃 Using the Database — Kanban Board</div>
+                <div class="help-section-body">
+                    <p>If your Database has a column set to type <strong>Select</strong> (like a Status column), a <strong>Kanban</strong> button will appear at the top. Click it to switch to a card board view where each column is a stage.</p>
+                    <p style="margin-top:10px;">You can <strong>drag and drop</strong> cards between columns to move a record from one stage to another — for example, dragging a job from "In Progress" to "Done".</p>
+                    <p style="margin-top:10px;">To go back to the table view, click <strong>☰ Table</strong>.</p>
+                </div>
+            </div>
+
+            <div class="help-section">
+                <div class="help-section-title">⚡ Automations — Make Things Happen Automatically</div>
+                <div class="help-section-body">
+                    <p>Automations watch for something to happen, then do something for you. Every automation has three parts:</p>
+                    <div class="help-steps">
+                        <div class="help-step">
+                            <div class="help-step-num">1</div>
+                            <div><strong>Trigger</strong> — The thing that sets it off. Example: "When a job's Status changes to Done."</div>
+                        </div>
+                        <div class="help-step">
+                            <div class="help-step-num">2</div>
+                            <div><strong>Conditions</strong> (optional) — Extra filters. Example: "Only if the Value is over 500."</div>
+                        </div>
+                        <div class="help-step">
+                            <div class="help-step-num">3</div>
+                            <div><strong>Actions</strong> — What happens. Example: "Send me a notification" + "Create a task called Send Invoice."</div>
+                        </div>
+                    </div>
+                    <div class="help-tip">
+                        <strong>Example automation:</strong> When a tenant's Lease End date = today → Send notification "Lease ending for {Name} today" → Create task "Contact {Name} about renewal" due in 3 days.
+                    </div>
+                    <p style="margin-top:14px;">You can add multiple actions to one trigger. Use <strong>{Field Name}</strong> in notification text to insert real data — like <code style="background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;font-size:12px;">{Name}</code> or <code style="background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;font-size:12px;">{Status}</code>.</p>
+                    <p style="margin-top:10px;">Use the <strong>▶ Run</strong> button on any automation to test it manually.</p>
+                </div>
+            </div>
+
+            <div class="help-section">
+                <div class="help-section-title">⚡ Automation Triggers — Full List</div>
+                <div class="help-section-body">
+                    <table class="help-table">
+                        <thead><tr><th>Trigger</th><th>When it fires</th></tr></thead>
+                        <tbody>
+                            <tr><td>Record added to database</td><td>The moment you save a new row</td></tr>
+                            <tr><td>Record updated in database</td><td>Any time you edit and save a row</td></tr>
+                            <tr><td>Field changes to a value</td><td>When a specific column changes to a specific option (e.g. Status → "Done")</td></tr>
+                            <tr><td>Task added</td><td>Every time a new task is created</td></tr>
+                            <tr><td>Task completed</td><td>When you check off a task</td></tr>
+                            <tr><td>Date field = today</td><td>When a date column on a record matches today's date (checked on app open)</td></tr>
+                            <tr><td>X days since a date field</td><td>When a set number of days have passed since a date column (checked on app open)</td></tr>
+                            <tr><td>Checklist fully completed</td><td>When every step in a Checklist block is checked off</td></tr>
+                            <tr><td>Event added to schedule</td><td>When a new event is added to a Schedule block</td></tr>
+                            <tr><td>Every day</td><td>Once per day, the first time you open the app that day</td></tr>
+                            <tr><td>Every week</td><td>Once per week, the first time you open the app that week</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="help-section">
+                <div class="help-section-title">⚡ Automation Actions — Full List</div>
+                <div class="help-section-body">
+                    <table class="help-table">
+                        <thead><tr><th>Action</th><th>What it does</th></tr></thead>
+                        <tbody>
+                            <tr><td>Send a notification</td><td>Pops up a browser notification and an in-app toast. Supports {Field Name} to include real data.</td></tr>
+                            <tr><td>Create a task</td><td>Automatically adds a task to any Task List block. You can set a due date offset (e.g. due in 3 days) and a priority.</td></tr>
+                            <tr><td>Update a field</td><td>Changes a column value on the record that triggered it. E.g. set Status to "Notified".</td></tr>
+                            <tr><td>Create a record</td><td>Adds a new row to any Database block.</td></tr>
+                            <tr><td>Log to Tracker</td><td>Adds an entry to any Tracker block with a value you specify. Good for auto-logging revenue when a job is marked done.</td></tr>
+                            <tr><td>Send a webhook</td><td>POSTs the record data as JSON to any URL. Connects PocketHQ to Zapier, Make, n8n, or any other automation platform.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="help-section">
+                <div class="help-section-title">🔔 Notifications</div>
+                <div class="help-section-body">
+                    <p>PocketHQ uses your browser's built-in notifications. To enable them:</p>
+                    <div class="help-steps">
+                        <div class="help-step"><div class="help-step-num">1</div><div>Go to <strong>Settings</strong> in the left sidebar.</div></div>
+                        <div class="help-step"><div class="help-step-num">2</div><div>Click <strong>Enable Notifications</strong> and allow when your browser asks.</div></div>
+                    </div>
+                    <div class="help-tip">
+                        <strong>On mobile (iPhone or Android):</strong> First add this page to your home screen (tap the Share button → "Add to Home Screen"). Then open it from your home screen icon and enable notifications from Settings. Notifications only work when the app is installed this way on mobile.
+                    </div>
+                    <p style="margin-top:12px;">Once enabled, you'll get notified when tasks are overdue, due today, or when any automation fires a notification action.</p>
+                </div>
+            </div>
+
+            <div class="help-section">
+                <div class="help-section-title">💾 Your Data</div>
+                <div class="help-section-body">
+                    <p>All your data is stored <strong>on your device</strong> — in your browser's local storage. Nothing is sent to a server. This means:</p>
+                    <ul class="help-list">
+                        <li>It works offline once loaded.</li>
+                        <li>Clearing your browser data will erase it — use <strong>Export Data</strong> in Settings to back it up regularly.</li>
+                        <li>It doesn't automatically sync across devices. Back up on one device and restore on another using the export file.</li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Dynamic block pages injected here -->
+        <div id="dynamic-pages"></div>
+
+    </main>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/license.js"></script>
+<script src="js/app.js"></script>
+<script>
+    // Install prompt
+    let _deferredInstall = null;
+    window.addEventListener('beforeinstallprompt', e => {
+        e.preventDefault(); _deferredInstall = e;
+        if (!localStorage.getItem('phq_install_dismissed')) document.getElementById('install-banner').classList.remove('hidden');
+    });
+    function installApp() { if (!_deferredInstall) return; _deferredInstall.prompt(); _deferredInstall.userChoice.then(() => { _deferredInstall = null; document.getElementById('install-banner').classList.add('hidden'); }); }
+    function dismissInstall() { localStorage.setItem('phq_install_dismissed','1'); document.getElementById('install-banner').classList.add('hidden'); }
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
+
+    // Show iOS install hint on activation screen
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.navigator.standalone;
+    if (isIOS) document.getElementById('ios-install-hint')?.classList.remove('hidden');
+
+    function showResetRequest() {
+        showModal(`<h3>Request Device Reset</h3><p style="color:var(--text-2);font-size:14px;margin-bottom:20px;line-height:1.6;">This will notify the PocketHQ team to unlock your license for a new device.</p><div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" style="width:auto;" onclick="submitResetRequest()">Submit</button></div>`);
+    }
+    async function submitResetRequest() { const r = await License.requestReset(); showModal(`<h3>${r.success?'✓ Sent':'Error'}</h3><p style="color:var(--text-2);font-size:14px;margin-bottom:20px;">${r.message}</p><div class="modal-actions"><button class="btn btn-primary" style="width:auto;" onclick="closeModal()">OK</button></div>`); }
+    function confirmReset() { showModal(`<h3>Reset Everything?</h3><p style="color:var(--text-2);font-size:14px;margin-bottom:20px;">This deletes all your blocks, records, and automations. Cannot be undone.</p><div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-danger" onclick="doReset()">Yes, Reset</button></div>`); }
+    function switchAutoTab(tab) {
+        document.getElementById('auto-tab-rules').classList.toggle('active', tab==='rules');
+        document.getElementById('auto-tab-log').classList.toggle('active', tab==='log');
+        document.getElementById('automations-list').classList.toggle('hidden', tab==='log');
+        document.getElementById('auto-log-container').classList.toggle('hidden', tab==='rules');
+        if (tab==='log') AutoLog.render();
+    }
+
+    function doReset() { State.reset(); location.reload(); }
+
+    function importBackup(event) {
+        const file = event.target.files[0]; if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (!Array.isArray(data.blocks) || !Array.isArray(data.automations)) throw new Error();
+                showModal(`<h3>Import Backup</h3><p style="color:var(--text-2);font-size:14px;margin-bottom:20px;">This will replace all your current blocks, records, and automations with the backup data. This cannot be undone.</p><div class="modal-actions"><button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-danger" onclick="doImport(${JSON.stringify(data).replace(/</g,'\\u003c')})">Yes, Import</button></div>`);
+            } catch { alert('Invalid backup file. Please use a PocketHQ JSON export.'); }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    }
+    function doImport(data) {
+        const d = State.get();
+        d.blocks = data.blocks; d.automations = data.automations;
+        if (data.setup) d.setup = data.setup;
+        State.save(); closeModal(); location.reload();
+    }
+
+    function toggleSidebar() {
+        const s = document.getElementById('sidebar'); const o = document.getElementById('sidebar-overlay');
+        s.classList.toggle('open'); o.classList.toggle('open');
+    }
+    function closeSidebar() {
+        document.getElementById('sidebar')?.classList.remove('open');
+        document.getElementById('sidebar-overlay')?.classList.remove('open');
+    }
+    function saveBizName() { const v = document.getElementById('settings-biz-name').value.trim(); if (!v) return; const d = State.get(); d.setup.businessName = v; State.save(); document.getElementById('sidebar-biz').textContent = v; showNotifToast('Saved'); }
+</script>
+</body>
+</html>
