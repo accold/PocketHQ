@@ -395,15 +395,14 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
     .main-content{margin-left:0;padding:70px 16px max(24px, env(safe-area-inset-bottom));padding-left:max(16px, env(safe-area-inset-left));padding-right:max(16px, env(safe-area-inset-right));}
     .global-search-bar{left:56px;transform:none;width:calc(100vw - 72px);}
     .page-header{flex-direction:column;gap:12px;}
-    .blocks-grid{grid-template-columns:repeat(2,1fr);}
+    .blocks-grid{grid-template-columns:1fr;}
     .template-grid{grid-template-columns:1fr 1fr;}
     .db-search{width:100%;}
     .stats-bar{flex-direction:row;flex-wrap:wrap;}
     .stats-bar .stat-card{flex:1;min-width:calc(50% - 6px);}
     .filter-tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;}
     .filter-tab{white-space:nowrap;flex-shrink:0;}
-    .task-card{padding:12px;}
-    .task-card-right{gap:4px;}
-    .task-card-right .priority-pill{display:none;}
-    .btn-sm{padding:5px 8px;font-size:11px;}
+    .task-card{flex-direction:column;gap:10px;padding:12px;}
+    .task-card-left{width:100%;}
+    .task-card-right{width:100%;justify-content:flex-end;}
 }
