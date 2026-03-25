@@ -39,10 +39,9 @@ const License = (() => {
 
         const isPromo = existing && existing.length > 0 && existing[0].is_promo === true;
 
-        // 2. Check Gumroad (skipped for promo keys)
-        if (!isPromo) {
-            const gumroadValid = await verifyGumroad(licenseKey);
-            if (!gumroadValid.success) return { success: false, message: gumroadValid.message };
+        // 2. Key must exist in Supabase (inserted by webhook on purchase, or promo)
+        if (!existing || existing.length === 0) {
+            return { success: false, message: 'Invalid license key. Make sure you are using the key from your purchase email.' };
         }
 
         if (existing && existing.length > 0) {
